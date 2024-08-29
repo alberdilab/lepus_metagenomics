@@ -416,6 +416,8 @@ save(ancom_rand_output_mag_pre_wild,
      file="data/ancombc_filtered_wild_captive.Rdata")
 ```
 
+
+#### Relative abundances of Spirochaetota
 ```{r spiro_capwild, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 spiro_mags <- genome_metadata %>% 
   filter(phylum=="p__Spirochaetota")
@@ -435,7 +437,7 @@ genome_counts_filt %>%
   geom_boxplot(width = 0.5, alpha=0.5,outlier.shape = NA, show.legend = FALSE) +
   scale_color_manual(values=diet_colors)+
   scale_fill_manual(values=diet_colors) +
-  scale_x_discrete(labels=c("Wild" = "Wild", "Pre_grass" = "Captive-born")) +
+  scale_x_discrete(labels=c("Wild" = "Wild", "Pre_grass" = "Captive-bred")) +
   coord_cartesian(xlim = c(1, NA)) +
   theme_classic() +
   theme(

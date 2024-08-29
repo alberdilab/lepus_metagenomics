@@ -61,7 +61,7 @@ richness
 neutral
 phylogenetic
 functional
-pre-vs-post-grass
+before-and-after-grass
 permanova-analysis-1
 beta-diversity-plots-1
 richness-1
@@ -75,6 +75,7 @@ enrichment-analysis-ancombc2
 mag-level
 genus-level
 phylum-level
+relative-abundances-of-spirochaetota
 captive-before-and-after-grass
 structural-zeros-1
 enrichment-analysis-ancombc2-1
@@ -86,6 +87,6 @@ ancom-bc2
 captive-vs-wild-1
 element-level
 functional-level
-before-and-after-grass
+before-and-after-grass-1
 element-level-1
 functional-level-1

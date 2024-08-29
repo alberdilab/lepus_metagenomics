@@ -485,6 +485,7 @@ ancombc_rand_func <- ancom_rand_output_function_pre_post$res %>%
   dplyr::arrange(p_dietPre_grass) %>%
   merge(., tax, by="taxon") %>%
   dplyr::arrange(lfc_dietPre_grass)
+ancombc_rand_func
 ```
 
 
