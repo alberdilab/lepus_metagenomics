@@ -1,0 +1,497 @@
+
+# Functional differences
+
+```{r load_data_func,comment="", echo=FALSE, message=FALSE, warning=FALSE}
+load("data/data_host_filtered.Rdata")
+load("data/ancombc_filtered_functional.Rdata")
+```
+
+```{r gift, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+genome_counts_filt <- genome_counts_filt[genome_counts_filt$genome %in% rownames(genome_gifts_raw),]
+genome_counts_filt <- genome_counts_filt %>%
+#  remove_rownames() %>% 
+  column_to_rownames(., "genome") %>%
+  filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
+  select_if(~!all(. == 0))%>%
+  rownames_to_column(., "genome")
+
+genome_gifts <- genome_gifts_raw[rownames(genome_gifts_raw) %in% genome_counts_filt$genome,]
+genome_gifts <- genome_gifts[, colSums(genome_gifts != 0) > 0]
+
+# genome_counts_filt <- genome_counts_filt[genome_counts_filt$genome %in% rownames(genome_gifts),] 
+# rownames(genome_counts_filt) <- NULL
+#Aggregate bundle-level GIFTs into the compound level
+GIFTs_elements <- to.elements(genome_gifts,GIFT_db)
+GIFTs_elements_filtered <- GIFTs_elements[rownames(GIFTs_elements) %in% genome_counts_filt$genome,]
+GIFTs_elements_filtered <- as.data.frame(GIFTs_elements_filtered) %>% 
+  select_if(~ !is.numeric(.) || sum(.) != 0)
+
+#Aggregate element-level GIFTs into the function level
+GIFTs_functions <- to.functions(GIFTs_elements_filtered,GIFT_db)
+
+#Aggregate function-level GIFTs into overall Biosynthesis, Degradation and Structural GIFTs
+GIFTs_domains <- to.domains(GIFTs_functions,GIFT_db)
+
+#Get community-weighed average GIFTs per sample
+genome_counts_row <- genome_counts_filt %>%
+  mutate_at(vars(-genome),~./sum(.)) %>% 
+  column_to_rownames(., "genome") 
+# genome_counts_row <- rownames_to_column(genome_counts_row, "genome")
+GIFTs_elements_community <- to.community(GIFTs_elements_filtered,genome_counts_row,GIFT_db)
+GIFTs_functions_community <- to.community(GIFTs_functions,genome_counts_row,GIFT_db)
+GIFTs_domains_community <- to.community(GIFTs_domains,genome_counts_row,GIFT_db)
+```
+
+## MCI
+```{r gitfs_functional_wild, echo=TRUE,results=TRUE}
+GIFTs_functions_community %>%
+  rowMeans() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+#  filter(time_point=="0_Wild") %>%
+  group_by(diet) %>%
+  summarise(MCI = mean(value), sd = sd(value))
+
+MCI <- GIFTs_functions_community %>%
+  rowMeans() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) %>% 
+  filter(diet!="Post_grass")
+
+shapiro.test(MCI$value)
+res.aov<-aov(value ~ diet, data=MCI)
+summary(res.aov)
+```
+
+## Community level plots
+```{r comunity_elem_plot, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
+GIFTs_elements_community %>%
+    as.data.frame() %>%
+    rownames_to_column(var="sample")%>%
+    pivot_longer(!sample,names_to="trait",values_to="gift") %>%
+    left_join(sample_metadata, by = join_by(sample == sample)) %>%
+#  filter(!diet =="Post_grass")%>%
+    mutate(functionid = substr(trait, 1, 3)) %>%
+    mutate(trait = case_when(
+      trait %in% GIFT_db$Code_element ~ GIFT_db$Element[match(trait, GIFT_db$Code_element)],
+      TRUE ~ trait
+    )) %>%
+    mutate(functionid = case_when(
+      functionid %in% GIFT_db$Code_function ~ GIFT_db$Function[match(functionid, GIFT_db$Code_function)],
+      TRUE ~ functionid
+    )) %>%
+    mutate(trait=factor(trait,levels=unique(GIFT_db$Element))) %>%
+    mutate(functionid=factor(functionid,levels=unique(GIFT_db$Function))) %>%
+    ggplot(aes(x=sample,y=trait,fill=gift)) +
+        geom_tile(colour="white", linewidth=0.2)+
+        scale_fill_gradientn(colours=rev(c("#d53e4f", "#f46d43", "#fdae61", "#fee08b", "#e6f598", "#abdda4", "#ddf1da")))+
+        facet_grid(functionid ~ diet, scales="free",space="free") +
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+              axis.text.y = element_text(size=6),
+              strip.text.y = element_text(angle = 0)
+              ) +
+        labs(y="Traits",x="Samples",fill="GIFT")
+```
+
+```{r comunity_funct_plot, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
+unique_funct_db<- GIFT_db[c(3,4,5)] %>% 
+  distinct(Code_function, .keep_all = TRUE)
+
+GIFTs_functions_community %>%
+   t() %>%
+  as.data.frame() %>%
+  mutate_if(is.character, as.numeric)  %>%
+  rownames_to_column(., "Code_function")  %>%
+  left_join(.,unique_funct_db[c(1,3)],by = join_by(Code_function == Code_function))  %>%
+  select(-Code_function) %>%
+  column_to_rownames(., "Function")%>%
+   t()  %>%
+    as.data.frame() %>%
+    rownames_to_column(var="sample") %>%
+    pivot_longer(!sample,names_to="trait",values_to="gift") %>%
+    left_join(sample_metadata, by = join_by(sample == sample))%>%
+ # filter(!diet =="Post_grass") %>%
+    ggplot(aes(x=trait,y=sample,fill=gift)) +
+        geom_tile(colour="white", linewidth=0.2)+
+        scale_fill_gradientn(colours=rev(c("#d53e4f", "#f46d43", "#fdae61", "#fee08b", "#e6f598", "#abdda4", "#ddf1da")))+
+        facet_grid(diet ~ ., scales="free",space="free")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10),
+        axis.text.y = element_text(size=8),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 12, color="black",face="bold"),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)),
+        axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)),
+        panel.background= element_blank()
+              ) +
+        labs(x="Function", y="Sample",fill="GIFT")
+```
+
+## ANCOM-BC2
+
+### Captive vs Wild 
+
+#### Element level
+```{r phyloseq_ele, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+
+sample_info_tab_phy <- sample_metadata%>%
+  column_to_rownames(var="sample")%>%
+  filter(diet!="Post_grass") %>% 
+  sample_data()
+
+count_phy <- GIFTs_elements_community %>% 
+  as.data.frame() %>%
+  rownames_to_column("sample") %>%
+  filter(sample %in% rownames(sample_info_tab_phy)) %>%
+  column_to_rownames("sample") %>% 
+  select(which(!colSums(., na.rm=TRUE) %in% 0)) %>% 
+  t() %>%
+  otu_table(., taxa_are_rows=T)
+
+uniqueGIFT_db<- unique(GIFT_db[c(2,4,5,6)]) %>% unite("Function",Function:Element, sep= "_", remove=FALSE)
+
+TAX <- uniqueGIFT_db%>%
+    remove_rownames()%>%
+  column_to_rownames(var="Code_element")%>%
+  as.matrix()%>%
+  tax_table()
+
+physeq_function = phyloseq(count_phy, TAX, sample_info_tab_phy)
+  
+```
+
+```{r ancom_rand_elem_capwild, comment="", echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
+set.seed(1234) #set seed for reproducibility
+ancom_rand_output_element_captive_wild = ancombc2(data = physeq_function, 
+                  assay_name = "counts", 
+                  tax_level = NULL, #change to agglomerate analysis to a higher taxonomic range
+                  fix_formula = "region", #fixed variable(s)
+                  p_adj_method = "holm", 
+                  pseudo_sens = TRUE,
+                  prv_cut = 0, 
+                  lib_cut = 0, 
+                  s0_perc = 0.05,
+                  group = NULL, 
+                  struc_zero = FALSE, 
+                  neg_lb = FALSE,
+                  alpha = 0.05, 
+                  n_cl = 2, 
+                  verbose = TRUE,
+                  global = FALSE, 
+                  pairwise = FALSE, 
+                  dunnet = FALSE, 
+                  trend = FALSE,
+                  iter_control = list(tol = 1e-5, max_iter = 20, verbose = FALSE),
+                  em_control = list(tol = 1e-5, max_iter = 100),
+                  mdfdr_control = list(fwer_ctrl_method = "holm", B = 100), 
+                  trend_control = NULL)
+
+```
+
+```{r table_ele1, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+tax <- data.frame(physeq_function@tax_table) %>%
+  rownames_to_column(., "taxon")
+```
+
+```{r ancom_rand_res_elem1, echo=FALSE, comment="", message=FALSE, warning=FALSE}
+ancombc_rand_table <- ancom_rand_output_element_captive_wild$res %>%
+  dplyr::select(taxon, lfc_regionNafarroa, p_regionNafarroa) %>%
+  filter(p_regionNafarroa < 0.05) %>%
+  dplyr::arrange(p_regionNafarroa) %>%
+  merge(., tax, by="taxon")
+```
+
+```{r ancombc_rand_plot_elem1, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
+ancombc_rand_table%>%
+#      mutate(Function=factor(Function,levels=ancombc_rand_table$Function)) %>%
+mutate(Color = ifelse(lfc_regionNafarroa <0, "Wild","Captive")) %>%
+ggplot(aes(x=forcats::fct_reorder(Function,lfc_regionNafarroa), y=lfc_regionNafarroa, fill=Color)) + 
+  geom_col() +
+#  geom_point(size=4) + 
+  scale_fill_manual(values=c("#e5bd5b", "#6b7398")) + 
+  geom_hline(yintercept=0) + 
+  coord_flip()+
+  theme(axis.text = element_text(size = 10, face="bold.italic"),
+        axis.title = element_text(size = 12),
+        legend.position = "right", 
+        legend.title = element_blank(),
+        panel.background = element_blank(),
+          panel.grid.major = element_line(size = 0.15, linetype = 'solid',
+                                colour = "grey"))+
+  xlab("Traits") + 
+  ylab("log2FoldChange")
+```
+
+#### Functional level
+```{r phylo_func1, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+sample_info_tab_phy <- sample_metadata%>%
+  column_to_rownames(var="sample")%>%
+  filter(diet!="Post_grass") %>%
+  sample_data()
+
+count_phy <- GIFTs_functions_community %>% 
+  as.data.frame() %>%
+  rownames_to_column("sample") %>%
+  filter(sample %in% rownames(sample_info_tab_phy)) %>%
+  column_to_rownames("sample") %>% 
+  select(which(!colSums(., na.rm=TRUE) %in% 0)) %>% 
+  t() %>%
+  otu_table(., taxa_are_rows=T)
+
+TAX <- unique_funct_db%>%
+    remove_rownames()%>%
+  column_to_rownames(var="Code_function")%>%
+  as.matrix()%>%
+  tax_table()
+
+physeq_functional_filtered = phyloseq(count_phy, TAX, sample_info_tab_phy)
+physeq_functional_filtered_clr <- microbiome::transform(physeq_functional_filtered, 'clr')  
+```
+
+
+```{r ancom_rand_func_prewild, comment="", echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
+set.seed(1234) #set seed for reproducibility
+ancom_rand_output_function_pre_wild = ancombc2(data = physeq_functional_filtered, 
+                  assay_name = "counts", 
+                  tax_level = NULL, #change to agglomerate analysis to a higher taxonomic range
+                  fix_formula = "region", #fixed variable(s)
+                  p_adj_method = "holm", 
+                  pseudo_sens = TRUE,
+                  prv_cut = 0, 
+                  lib_cut = 0, 
+                  s0_perc = 0.05,
+                  group = NULL, 
+                  struc_zero = FALSE, 
+                  neg_lb = FALSE,
+                  alpha = 0.05, 
+                  n_cl = 2, 
+                  verbose = TRUE,
+                  global = FALSE, 
+                  pairwise = FALSE, 
+                  dunnet = FALSE, 
+                  trend = FALSE,
+                  iter_control = list(tol = 1e-5, max_iter = 20, verbose = FALSE),
+                  em_control = list(tol = 1e-5, max_iter = 100),
+                  mdfdr_control = list(fwer_ctrl_method = "holm", B = 100), 
+                  trend_control = NULL)
+
+```
+
+```{r table_func1, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+tax <- data.frame(physeq_functional_filtered@tax_table) %>%
+  rownames_to_column(., "taxon")
+
+ancombc_rand_func <- ancom_rand_output_function_pre_wild$res %>%
+  dplyr::select(taxon, lfc_regionNafarroa, p_regionNafarroa) %>%
+  filter(p_regionNafarroa < 0.05) %>%
+  dplyr::arrange(p_regionNafarroa) %>%
+  merge(., tax, by="taxon") %>%
+  dplyr::arrange(lfc_regionNafarroa)
+```
+
+```{r ancom_rand_res_funct1, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+ancombc_rand_table_func <- ancom_rand_output_function_pre_wild$res %>%
+  dplyr::select(taxon, lfc_regionNafarroa, p_regionNafarroa) %>%
+  filter(p_regionNafarroa < 0.05) %>%
+  dplyr::arrange(p_regionNafarroa) %>%
+  merge(., tax, by="taxon")
+```
+
+```{r ancombc_rand_plot_funct, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=8, fig.fullwidth=TRUE}
+ancombc_rand_table_func%>%
+mutate(Color = ifelse(lfc_regionNafarroa <0, "Wild","Captive")) %>%
+ggplot(aes(x=forcats::fct_reorder(Function,lfc_regionNafarroa), y=lfc_regionNafarroa, fill=Color)) + 
+  geom_col() +
+  scale_fill_manual(values=c("#e5bd5b", "#6b7398")) + 
+  geom_hline(yintercept=0) + 
+  coord_flip()+
+  theme(axis.text = element_text(size = 10, face="bold.italic"),
+        axis.title = element_text(size = 12),
+        legend.position = "right", 
+        legend.title = element_blank(),
+        panel.background = element_blank(),
+          panel.grid.major = element_line(size = 0.15, linetype = 'solid',
+                                colour = "grey"))+
+  xlab("Traits") + 
+  ylab("log2FoldChange")
+```
+
+
+### Before and after grass
+
+#### Element level
+```{r phyloseq_ele_post, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+
+sample_info_tab_phy <- sample_metadata%>%
+  column_to_rownames(var="sample")%>%
+  filter(diet!="Wild") %>% 
+  sample_data()
+
+count_phy <- GIFTs_elements_community %>% 
+  as.data.frame() %>%
+  rownames_to_column("sample") %>%
+  filter(sample %in% rownames(sample_info_tab_phy)) %>%
+  column_to_rownames("sample") %>% 
+  select(which(!colSums(., na.rm=TRUE) %in% 0)) %>% 
+  t() %>%
+  otu_table(., taxa_are_rows=T)
+
+uniqueGIFT_db<- unique(GIFT_db[c(2,4,5,6)]) %>% unite("Function",Function:Element, sep= "_", remove=FALSE)
+
+TAX <- uniqueGIFT_db%>%
+    remove_rownames()%>%
+  column_to_rownames(var="Code_element")%>%
+  as.matrix()%>%
+  tax_table()
+
+physeq_function = phyloseq(count_phy, TAX, sample_info_tab_phy)
+  
+```
+
+```{r ancom_rand_elem_post, comment="", echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
+set.seed(1234) #set seed for reproducibility
+ancom_rand_output_element_pre_post = ancombc2(data = physeq_function, 
+                  assay_name = "counts", 
+                  tax_level = NULL, #change to agglomerate analysis to a higher taxonomic range
+                  fix_formula = "diet", #fixed variable(s)
+                  rand_formula = "(1|individual)",
+                  p_adj_method = "holm", 
+                  pseudo_sens = TRUE,
+                  prv_cut = 0, 
+                  lib_cut = 0, 
+                  s0_perc = 0.05,
+                  group = NULL, 
+                  struc_zero = FALSE, 
+                  neg_lb = FALSE,
+                  alpha = 0.05, 
+                  n_cl = 2, 
+                  verbose = TRUE,
+                  global = FALSE, 
+                  pairwise = FALSE, 
+                  dunnet = FALSE, 
+                  trend = FALSE,
+                  iter_control = list(tol = 1e-5, max_iter = 20, verbose = FALSE),
+                  em_control = list(tol = 1e-5, max_iter = 100),
+                  lme_control = lme4::lmerControl(),
+                  mdfdr_control = list(fwer_ctrl_method = "holm", B = 100), 
+                  trend_control = NULL)
+
+```
+
+```{r table_ele2, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+tax <- data.frame(physeq_function@tax_table) %>%
+  rownames_to_column(., "taxon")
+
+ancombc_rand_elem <- ancom_rand_output_element_pre_post$res %>%
+  dplyr::select(taxon, lfc_dietPre_grass, p_dietPre_grass) %>%
+  filter(p_dietPre_grass < 0.05) %>%
+  dplyr::arrange(p_dietPre_grass) %>%
+  merge(., tax, by="taxon") %>%
+  dplyr::arrange(lfc_dietPre_grass)
+
+```
+```{r ancom_rand_res_elem2, echo=FALSE, comment="", message=FALSE, warning=FALSE}
+ancombc_rand_table <- ancom_rand_output_element_pre_post$res %>%
+  dplyr::select(taxon, lfc_dietPre_grass, p_dietPre_grass) %>%
+  filter(p_dietPre_grass < 0.05) %>%
+  dplyr::arrange(p_dietPre_grass) %>%
+  merge(., tax, by="taxon")
+```
+```{r ancombc_rand_plot_elem2, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
+ancombc_rand_table%>%
+#      mutate(Function=factor(Function,levels=ancombc_rand_table$Function)) %>%
+mutate(Color = ifelse(lfc_dietPre_grass <0, "Post","Pre")) %>%
+ggplot(aes(x=forcats::fct_reorder(Function,lfc_dietPre_grass), y=lfc_dietPre_grass, fill=Color)) + 
+  geom_col() +
+#  geom_point(size=4) + 
+  scale_fill_manual(values=c("#e5bd5b", "#6b7398")) + 
+  geom_hline(yintercept=0) + 
+  coord_flip()+
+  theme(axis.text = element_text(size = 10, face="bold.italic"),
+        axis.title = element_text(size = 12),
+        legend.position = "right", 
+        legend.title = element_blank(),
+        panel.background = element_blank(),
+          panel.grid.major = element_line(size = 0.15, linetype = 'solid',
+                                colour = "grey"))+
+  xlab("Traits") + 
+  ylab("log2FoldChange")
+```
+
+#### Functional level
+```{r phylo_func2, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+
+sample_info_tab_phy <- sample_metadata%>%
+  column_to_rownames(var="sample")%>%
+  filter(diet!="Wild") %>%
+  sample_data()
+
+count_phy <- GIFTs_functions_community %>% 
+  as.data.frame() %>%
+  rownames_to_column("sample") %>%
+  filter(sample %in% rownames(sample_info_tab_phy)) %>%
+  column_to_rownames("sample") %>% 
+  select(which(!colSums(., na.rm=TRUE) %in% 0)) %>% 
+  t() %>%
+  otu_table(., taxa_are_rows=T)
+
+TAX <- unique_funct_db%>%
+    remove_rownames()%>%
+  column_to_rownames(var="Code_function")%>%
+  as.matrix()%>%
+  tax_table()
+
+physeq_functional_filtered = phyloseq(count_phy, TAX, sample_info_tab_phy)
+physeq_functional_filtered_clr <- microbiome::transform(physeq_functional_filtered, 'clr')  
+```
+
+
+```{r ancom_rand_func2, comment="", echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
+set.seed(1234) #set seed for reproducibility
+ancom_rand_output_function_pre_post = ancombc2(data = physeq_functional_filtered, 
+                  assay_name = "counts", 
+                  tax_level = NULL, #change to agglomerate analysis to a higher taxonomic range
+                  fix_formula = "diet", #fixed variable(s)
+                  rand_formula = "(1|individual)",
+                  p_adj_method = "holm", 
+                  pseudo_sens = TRUE,
+                  prv_cut = 0, 
+                  lib_cut = 0, 
+                  s0_perc = 0.05,
+                  group = NULL, 
+                  struc_zero = FALSE, 
+                  neg_lb = FALSE,
+                  alpha = 0.05, 
+                  n_cl = 2, 
+                  verbose = TRUE,
+                  global = FALSE, 
+                  pairwise = FALSE, 
+                  dunnet = FALSE, 
+                  trend = FALSE,
+                  iter_control = list(tol = 1e-5, max_iter = 20, verbose = FALSE),
+                  em_control = list(tol = 1e-5, max_iter = 100),
+                  lme_control = lme4::lmerControl(),
+                  mdfdr_control = list(fwer_ctrl_method = "holm", B = 100), 
+                  trend_control = NULL)
+
+```
+```{r table_func2, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+tax <- data.frame(physeq_functional_filtered@tax_table) %>%
+  rownames_to_column(., "taxon")
+
+ancombc_rand_func <- ancom_rand_output_function_pre_post$res %>%
+  dplyr::select(taxon, lfc_dietPre_grass, p_dietPre_grass) %>%
+  filter(p_dietPre_grass < 0.05) %>%
+  dplyr::arrange(p_dietPre_grass) %>%
+  merge(., tax, by="taxon") %>%
+  dplyr::arrange(lfc_dietPre_grass)
+```
+
+
+```{r ancom_save_results, comment="", echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
+save(ancom_rand_output_element_captive_wild,
+     ancom_rand_output_function_pre_wild,
+     ancom_rand_output_element_pre_post,
+     ancom_rand_output_function_pre_post,
+     file="data/ancombc_filtered_functional.Rdata")
+```
