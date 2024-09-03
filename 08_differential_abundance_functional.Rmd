@@ -41,6 +41,123 @@ GIFTs_elements_community <- to.community(GIFTs_elements_filtered,genome_counts_r
 GIFTs_functions_community <- to.community(GIFTs_functions,genome_counts_row,GIFT_db)
 GIFTs_domains_community <- to.community(GIFTs_domains,genome_counts_row,GIFT_db)
 ```
+```{r phylum_elem_plot, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=10, fig.fullwidth=TRUE}
+GIFTs_elements_filtered %>% 
+  rownames_to_column("genome") %>%
+  left_join(genome_metadata[,1:8], by = join_by(genome == genome)) %>% group_by(phylum)  %>%
+  summarize(across(where(is.numeric), mean, na.rm = TRUE))%>%
+    pivot_longer(!phylum,names_to="trait",values_to="gift") %>%
+    mutate(functionid = substr(trait, 1, 3)) %>%
+    mutate(trait = case_when(
+      trait %in% GIFT_db$Code_element ~ GIFT_db$Element[match(trait, GIFT_db$Code_element)],
+      TRUE ~ trait
+    )) %>%
+    mutate(functionid = case_when(
+      functionid %in% GIFT_db$Code_function ~ GIFT_db$Function[match(functionid, GIFT_db$Code_function)],
+      TRUE ~ functionid
+    )) %>%
+    mutate(trait=factor(trait,levels=unique(GIFT_db$Element))) %>%
+    mutate(functionid=factor(functionid,levels=unique(GIFT_db$Function))) %>%
+    ggplot(aes(x=phylum,y=trait,fill=gift)) +
+        geom_tile(colour="white", linewidth=0.2)+
+        scale_fill_gradientn(colours=rev(c("#d53e4f", "#f46d43", "#fdae61", "#fee08b", "#e6f598", "#abdda4", "#ddf1da")))+
+        facet_grid(functionid ~ ., scales="free",space="free") +
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+              axis.text.y = element_text(size=6),
+              strip.text.y = element_text(angle = 0)
+              ) +
+        labs(y="Traits",x="Samples",fill="GIFT")
+  
+```
+```{r mci_mean, echo=FALSE, message=FALSE, warning=FALSE}
+GIFTs_elements_filtered  %>% 
+  rownames_to_column("genome")%>% 
+  left_join(genome_metadata[,1:8], by = join_by(genome == genome)) %>% group_by(phylum)  %>%  # Group by phylum
+  summarize(across(where(is.numeric), mean, na.rm = TRUE)) %>%  # Calculate the mean per group
+  mutate(
+    row_mean = rowMeans(across(where(is.numeric)), na.rm = TRUE),  # Calculate row means
+    row_sd = apply(across(where(is.numeric)), 1, sd, na.rm = TRUE),
+    row_median = apply(across(where(is.numeric)), 1, median, na.rm = TRUE),
+    row_max = apply(across(where(is.numeric)), 1, max, na.rm = TRUE),
+    row_min = apply(across(where(is.numeric)), 1, min, na.rm = TRUE)# Calculate row standard deviations
+  ) %>% 
+  select(phylum, row_mean, row_sd, row_median, row_max, row_min) %>% 
+  arrange(-row_mean)
+```
+
+```{r phylum_elem_values, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+
+GIFTs_elements_filtered %>% 
+  rownames_to_column("genome") %>%
+  left_join(genome_metadata[,1:8], by = join_by(genome == genome)) %>% group_by(phylum)  %>%
+  summarize(across(where(is.numeric), mean, na.rm = TRUE))%>%
+    pivot_longer(!phylum,names_to="trait",values_to="gift") %>%
+    mutate(functionid = substr(trait, 1, 3)) %>%
+    mutate(trait = case_when(
+      trait %in% GIFT_db$Code_element ~ GIFT_db$Element[match(trait, GIFT_db$Code_element)],
+      TRUE ~ trait
+    )) %>%
+    mutate(functionid = case_when(
+      functionid %in% GIFT_db$Code_function ~ GIFT_db$Function[match(functionid, GIFT_db$Code_function)],
+      TRUE ~ functionid
+    )) %>%
+    mutate(trait=factor(trait,levels=unique(GIFT_db$Element))) %>%
+    mutate(functionid=factor(functionid,levels=unique(GIFT_db$Function))) %>% 
+  group_by(phylum, functionid) %>% 
+  summarize(median=median(gift))%>%
+  pivot_wider(names_from = functionid, values_from = median)
+  
+```
+```{r funct_boxplot, echo=FALSE, message=FALSE, warning=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
+GIFTs_elements_filtered %>% 
+  rownames_to_column("genome") %>%
+  left_join(genome_metadata[,1:8], by = join_by(genome == genome)) %>% group_by(phylum)  %>%
+  summarize(across(where(is.numeric), mean, na.rm = TRUE))%>%
+    pivot_longer(!phylum,names_to="trait",values_to="gift") %>%
+    mutate(functionid = substr(trait, 1, 3)) %>%
+    mutate(trait = case_when(
+      trait %in% GIFT_db$Code_element ~ GIFT_db$Element[match(trait, GIFT_db$Code_element)],
+      TRUE ~ trait
+    )) %>%
+    mutate(functionid = case_when(
+      functionid %in% GIFT_db$Code_function ~ GIFT_db$Function[match(functionid, GIFT_db$Code_function)],
+      TRUE ~ functionid
+    )) %>%
+    mutate(trait=factor(trait,levels=unique(GIFT_db$Element))) %>%
+    mutate(functionid=factor(functionid,levels=unique(GIFT_db$Function))) %>% 
+  group_by(phylum, functionid) %>% 
+  summarize(mean=mean(gift))%>%
+  ggplot(aes(y = mean, x = functionid, group=functionid, color=phylum)) +
+  geom_jitter(width = 0.2, size= 3, show.legend = FALSE) +
+  geom_boxplot(width = 0.5, alpha=0.5,outlier.shape = NA, show.legend = FALSE) +
+  scale_color_manual(values=phylum_colors)+
+#  scale_fill_manual(values=diet_colors) +
+#  scale_x_discrete(labels=c("Wild" = "Wild", "Pre_grass" = "Captive-born")) +
+#  stat_compare_means(method = "wilcox.test",show.legend = F, size = 3, label.y = c(150), label.x = c(1.5))+
+  coord_cartesian(xlim = c(1, NA)) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.text = element_text(size=10),
+    axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)),
+    axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))
+    )+
+  labs(x = "Origin", y = "Neutral")
+```
+# Spirochaetota
+```{r spiro_func, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+GIFTs_elements_filtered %>% 
+  as.data.frame() %>% 
+  rownames_to_column("genome") %>% 
+filter(genome %in% c("EHA04587_bin.1", "EHA04572_bin.6"))
+
+GIFTs_elements_filtered %>% 
+  select(D0308) %>% 
+  arrange(-D0308) %>% 
+  rownames_to_column("genome") %>% 
+  left_join(genome_metadata, by=join_by(genome==genome))
+```
 
 ## MCI
 ```{r gitfs_functional_wild, echo=TRUE,results=TRUE}
@@ -55,8 +172,9 @@ GIFTs_functions_community %>%
 MCI <- GIFTs_functions_community %>%
   rowMeans() %>%
   as_tibble(., rownames = "sample") %>%
-  left_join(sample_metadata, by = join_by(sample == sample)) %>% 
-  filter(diet!="Post_grass")
+  left_join(sample_metadata, by = join_by(sample == sample)) 
+# %>% 
+#   filter(diet!="Post_grass")
 
 shapiro.test(MCI$value)
 res.aov<-aov(value ~ diet, data=MCI)

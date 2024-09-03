@@ -84,39 +84,131 @@ circular_tree %>% open_tree(30) %>% rotate_tree(90)
 ## Taxonomy overview
 
 ```{r genome_taxonomy_bacteria, message=FALSE, warning=FALSE,}
-genome_metadata %>% 
+tax_mag <-genome_metadata %>% 
   group_by(phylum) %>%
-  summarise(mag_n=n()) %>%
-  arrange(-mag_n) %>%
+  summarise(mag_n=n()) 
+
+tax_mag %>%
+  mutate(percetage_mag=round(mag_n*100/sum(mag_n), 2)) %>% 
+  arrange(-percetage_mag) %>%
   tt()
 ```
 
 ## Mag size (MB)
+```{r}
+genome_metadata <-genome_metadata %>% 
+  mutate(corrected_size=100*length/completeness)
+```
 
 Mags average size (MB)
 ```{r mag_size_all_mean, message=FALSE, warning=FALSE}
 genome_metadata %>% 
-  summarise(Average_size=mean(length))
+  summarise(Average_corrected_size=mean(corrected_size))
 ```
+
 Minimum Mags size (MB)
 
 ```{r mag_size_min,message=FALSE, warning=FALSE}
 genome_metadata %>% 
-  filter(length==min(length))
+  filter(corrected_size==min(corrected_size))
+```
+
+Maximum Mags size (MB)
+
+```{r mag_size_max,message=FALSE, warning=FALSE}
+genome_metadata %>% 
+  filter(corrected_size==max(corrected_size))
 ```
 
 Mags arrange by size (MB)
 ```{r mag_size_all, message=FALSE, warning=FALSE}
 genome_metadata %>% 
-  arrange(length)
+  arrange(corrected_size) %>% 
+  tt()
 ```
 
-Mags average size and completeness by phylum (MB)
+Mags average size and completeness by phylum
 
 ```{r mag_size_phylum, message=FALSE, warning=FALSE}
 genome_metadata %>% 
   group_by(phylum) %>%
-  summarise(average_size=mean(length),average_comp=mean(completeness))
+  summarise(average_size=mean(corrected_size),sd_size=sd(corrected_size),average_comp=mean(completeness),sd_comp=sd(completeness)) %>%
+  mutate(Size=str_c(round(average_size,2),"±",round(sd_size,2)),
+         Completeness=str_c(round(average_comp,2),"±",round(sd_comp,2))) %>% 
+  arrange(-average_size) %>% 
+  select(phylum, Size, Completeness)
+```
+
+Mags average size and completeness by phylum in wild
+
+```{r mag_size_phylum_wild, message=FALSE, warning=FALSE}
+
+wild_data <-sample_metadata %>% 
+  filter(diet=="Wild")
+  
+  
+wild_genome <- genome_counts %>% 
+  select(genome, all_of(wild_data$sample)) %>%
+  filter(rowSums(across(where(is.numeric)))!=0) 
+  
+
+wild_genome_metadata <- genome_metadata %>% 
+  filter(genome %in% wild_genome$genome) %>% 
+  arrange(match(genome,wild_genome$genome))
+
+wild_genome_metadata %>% 
+  group_by(phylum) %>%
+  summarise(average_size=mean(corrected_size),sd_size=sd(corrected_size),average_comp=mean(completeness),sd_comp=sd(completeness)) %>%
+  mutate(Size=str_c(round(average_size,2),"±",round(sd_size,2)),
+         Completeness=str_c(round(average_comp,2),"±",round(sd_comp,2))) %>% 
+  arrange(-average_size) %>% 
+  select(phylum, Size, Completeness)
+
+```
+
+```{r mag_size_wild_mean, message=FALSE, warning=FALSE}
+wild_genome_metadata %>% 
+  summarise(average_size=mean(corrected_size),sd_size=sd(corrected_size),average_comp=mean(completeness),sd_comp=sd(completeness)) %>%
+  mutate(Size=str_c(round(average_size,2),"±",round(sd_size,2)),
+         Completeness=str_c(round(average_comp,2),"±",round(sd_comp,2))) %>% 
+  arrange(-average_size) %>% 
+  select(-Size, -Completeness)
+```
+
+Mags average size and completeness by phylum in captivity
+
+```{r mag_size_phylum_capt, message=FALSE, warning=FALSE}
+
+pre_data <-sample_metadata %>% 
+  filter(diet=="Pre_grass")
+  
+  
+pre_genome <- genome_counts %>% 
+  select(genome, all_of(pre_data$sample)) %>%
+  filter(rowSums(across(where(is.numeric)))!=0) 
+  
+
+pre_genome_metadata <- genome_metadata %>% 
+  filter(genome %in% pre_genome$genome) %>% 
+  arrange(match(genome,pre_genome$genome))
+
+pre_genome_metadata %>% 
+  group_by(phylum) %>%
+  summarise(average_size=mean(corrected_size),sd_size=sd(corrected_size),average_comp=mean(completeness),sd_comp=sd(completeness)) %>%
+  mutate(Size=str_c(round(average_size,2),"±",round(sd_size,2)),
+         Completeness=str_c(round(average_comp,2),"±",round(sd_comp,2))) %>% 
+  arrange(-average_size) %>% 
+  select(phylum, Size, Completeness)
+
+```
+
+```{r mag_size_mean_cap, message=FALSE, warning=FALSE}
+pre_genome_metadata %>% 
+  summarise(average_size=mean(corrected_size),sd_size=sd(corrected_size),average_comp=mean(completeness),sd_comp=sd(completeness)) %>%
+  mutate(Size=str_c(round(average_size,2),"±",round(sd_size,2)),
+         Completeness=str_c(round(average_comp,2),"±",round(sd_comp,2))) %>% 
+  arrange(-average_size) %>% 
+  select(-Size, -Completeness)
 ```
 
 ## Genome quality
@@ -243,7 +335,7 @@ function_tree
 
 ## Functional ordination
 
-```{r function_ordination, message=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE, eval=FALSE}
+```{r function_ordination, message=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
 # Generate the tSNE ordination
 tSNE_function <- Rtsne(X=function_table, dims = 2, check_duplicates = FALSE)
 

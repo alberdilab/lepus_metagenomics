@@ -270,17 +270,28 @@ genome_metadata %>%
 
 **Number of MAGs without species-level annotation**
 ```{r nonspe, comment="", echo=FALSE, message=FALSE, warning=FALSE}
-nonspecies <- genome_metadata %>%
-    filter(species == "s__") %>%
-    nrow()
-cat(nonspecies)
-```
+genome_metadata %>%
+  filter(species == "s__") %>%
+  summarize(Mag_nospecies = n())
 
+```
+```{r nonspe_phylum, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+total_mag_phylum <- genome_metadata %>%
+  group_by(phylum) %>%
+  summarize(count_total = n())
+genome_metadata %>%
+  filter(species == "s__") %>%
+  group_by(phylum) %>%
+  summarize(count_nospecies = n()) %>% 
+  left_join(total_mag_phylum, by = join_by(phylum == phylum)) %>% 
+  mutate(percentage=100*count_nospecies/count_total)
+
+```
 **Percentage of MAGs without species-level annotation**
 ```{r sp_percet, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 nmags <- nrow(genome_counts)
 perct <- nonspecies*100/nmags
-cat(perct)
+perct
 ```
 
 **Number of MAGs without genera-level annotation**
@@ -333,9 +344,9 @@ phylum_summary %>%
               Wild_sd=sd(relabun[diet=="Wild"]*100, na.rm=T),
               Captive_mean=mean(relabun[diet=="Pre_grass"]*100, na.rm=T),
               Captive_sd=sd(relabun[diet=="Pre_grass"]*100, na.rm=T)) %>%
-    mutate(total=str_c(round(total_mean,2),"±",round(total_sd,2)),
-           Wild=str_c(round(Wild_mean,2),"±",round(Wild_sd,2)),
-           Captive=str_c(round(Captive_mean,6),"±",round(Captive_sd,6))) %>% 
+    mutate(total=str_c(round(total_mean,3),"±",round(total_sd,3)),
+           Wild=str_c(round(Wild_mean,3),"±",round(Wild_sd,3)),
+           Captive=str_c(round(Captive_mean,3),"±",round(Captive_sd,3))) %>% 
     arrange(-total_mean) %>% 
     dplyr::select(phylum,total,Wild,Captive)
 ```

@@ -3,16 +3,16 @@
 ```{r load_data_beta, comment="", message=FALSE, warning=FALSE, eval=FALSE}
 load("data/data.Rdata")
 load("data/beta.Rdata")
-load("data/data_host_filtered.Rdata")
 ```
 
 ## Captive-bred vs wild
 
 ```{r load_data_mag_filtdamr_capwild, comment="", message=FALSE, warning=FALSE}
 load("data/beta_filtered_capwild.Rdata")
+load("data/data_host_filtered.Rdata")
 ```
 
-```{r filter_capwil, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+```{r filter_capwil, comment="", message=FALSE, warning=FALSE}
 wild_pre_samples <- sample_metadata %>% 
   filter(diet!="Post_grass") %>%
   dplyr::select(sample) %>% pull()
@@ -102,7 +102,7 @@ set.seed(1234)
 sample_metadata_row<- column_to_rownames(sample_metadata, "sample") 
 sample_metadata_row <- sample_metadata_row[labels(beta_q0n$S), ]
 
-betadisper(beta_q0n$S, sample_metadata$diet) %>% permutest(., pairwise = TRUE) 
+betadisper(beta_q0n$S, sample_metadata_row$diet) %>% permutest(., pairwise = TRUE) 
 
 adonis2(beta_q0n$S ~ diet, 
         data = sample_metadata %>% arrange(match(sample,labels(beta_q0n$S))), 
@@ -113,7 +113,7 @@ adonis2(beta_q0n$S ~ diet,
 
 **Neutral**
 ```{r permanova_wildcap_q1, comment="", message=FALSE, warning=FALSE}
-betadisper(beta_q1n$S, sample_metadata$diet) %>% permutest(., pairwise = TRUE) 
+betadisper(beta_q1n$S, sample_metadata_row$diet) %>% permutest(., pairwise = TRUE) 
 
 adonis2(beta_q1n$S ~ diet, 
         data = sample_metadata %>% arrange(match(sample,labels(beta_q1n$S))), 
@@ -124,7 +124,7 @@ adonis2(beta_q1n$S ~ diet,
 
 **Phylogenetic**
 ```{r permanova_wildcap_qP, comment="", message=FALSE, warning=FALSE}
-betadisper(beta_q1p$S, sample_metadata$diet) %>% permutest(., pairwise = TRUE) 
+betadisper(beta_q1p$S, sample_metadata_row$diet) %>% permutest(., pairwise = TRUE) 
 adonis2(beta_q1p$S ~ diet, 
         data = sample_metadata %>% arrange(match(sample,labels(beta_q1p$S))), 
         permutations = 999) %>%
@@ -134,7 +134,7 @@ adonis2(beta_q1p$S ~ diet,
 
 **Functional**
 ```{r permanova_wildcap_qF, comment="", message=FALSE, warning=FALSE}
-betadisper(beta_q1f$S, sample_metadata$diet) %>% permutest(., pairwise = TRUE) 
+betadisper(beta_q1f$S, sample_metadata_row$diet) %>% permutest(., pairwise = TRUE) 
 adonis2(beta_q1f$S ~ diet,
         data = sample_metadata %>% arrange(match(sample,labels(beta_q1f$S))),
         permutations = 999) %>%
@@ -277,7 +277,7 @@ beta_q1f$S %>%
 load("data/beta_filtered_pre_post.Rdata")
 ```
 
-```{r load_data_mag_prepost, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+```{r load_data_mag_prepost, comment="", message=FALSE, warning=FALSE}
 genome_counts <- genome_counts_filt
 post_pre_samples <- sample_metadata %>% 
   filter(diet!="Wild") %>%
@@ -365,7 +365,7 @@ set.seed(1234)
 sample_metadata_row<- column_to_rownames(sample_metadata, "sample") 
 sample_metadata_row <- sample_metadata_row[labels(beta_q0n$S), ]
 
-betadisper(beta_q0n$S, sample_metadata$diet) %>% permutest(., pairwise = TRUE) 
+betadisper(beta_q0n$S, sample_metadata_row$diet) %>% permutest(., pairwise = TRUE) 
 
 adonis2(beta_q0n$S ~ diet,
         data = sample_metadata %>% arrange(match(sample,labels(beta_q0n$S))),
@@ -377,7 +377,7 @@ adonis2(beta_q0n$S ~ diet,
 
 **Neutral**
 ```{r permanova_pre_post_q1, comment="", message=FALSE, warning=FALSE}
-betadisper(beta_q1n$S, sample_metadata$diet) %>% permutest(., pairwise = TRUE) 
+betadisper(beta_q1n$S, sample_metadata_row$diet) %>% permutest(., pairwise = TRUE) 
 
 adonis2(beta_q1n$S ~ diet,
         data = sample_metadata %>% arrange(match(sample,labels(beta_q1n$S))),
@@ -389,7 +389,7 @@ adonis2(beta_q1n$S ~ diet,
 
 **Phylogenetic**
 ```{r permanova_pre_post_qP, comment="", message=FALSE, warning=FALSE}
-betadisper(beta_q1p$S, sample_metadata$diet) %>% permutest(., pairwise = TRUE) 
+betadisper(beta_q1p$S, sample_metadata_row$diet) %>% permutest(., pairwise = TRUE) 
 adonis2(beta_q1p$S ~ diet,
         data = sample_metadata %>% arrange(match(sample,labels(beta_q1p$S))),
         permutations = 999,
@@ -400,7 +400,7 @@ adonis2(beta_q1p$S ~ diet,
 
 **Functional**
 ```{r permanova_pre_post_qF, comment="", message=FALSE, warning=FALSE}
-betadisper(beta_q1f$S, sample_metadata$diet) %>% permutest(., pairwise = TRUE) 
+betadisper(beta_q1f$S, sample_metadata_row$diet) %>% permutest(., pairwise = TRUE) 
 adonis2(beta_q1f$S ~ diet,
         data = sample_metadata %>% arrange(match(sample,labels(beta_q1f$S))),
         permutations = 999,
