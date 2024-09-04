@@ -44,6 +44,12 @@ structural_zeros <- genome_counts %>%
    left_join(genome_metadata, by=join_by(genome==genome)) %>%
    arrange(present,-average)
 structural_zeros
+struct_mag <- structural_zeros %>% 
+  filter(present %in% c("pre","wild")) %>% 
+  select(genome) %>% 
+  pull()
+struct_mag_meta <- structural_zeros %>% 
+  filter(present %in% c("pre","wild"))
 ```
 
 ### Enrichment analysis: Ancombc2
@@ -54,7 +60,7 @@ phylo_samples <- sample_metadata %>%
                     column_to_rownames("sample") %>% 
                     sample_data() #convert to phyloseq sample_data object
 phylo_genome <- genome_counts_filt %>% 
-                    filter(!genome %in% structural_zeros$genome) %>% # remove structural zeros
+                    filter(genome %in% structural_zeros$genome) %>% # remove structural zeros
                     column_to_rownames("genome") %>% 
                     mutate_all(~ replace(., . == 0, 0.00001)) %>% #add pseudo counts to avoid structural zero issues (note this approach can be improved!)
                     otu_table(., taxa_are_rows = TRUE)
@@ -69,6 +75,8 @@ phylo_taxonomy <- genome_metadata %>%
 physeq_genome_filtered <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
 physeq_genome_filtered_clr <- microbiome::transform(physeq_genome_filtered, 'clr')
 ```
+
+
 
 
 ```{r filtercapwild, comment="", echo=FALSE, message=FALSE, warning=FALSE}
@@ -511,6 +519,48 @@ physeq_genome_filtered_clr <- microbiome::transform(physeq_genome_filtered, 'clr
 ```{r filter_pre_post, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 physeq_sample <- subset_samples(physeq_genome_filtered, diet %in% c("Pre_grass","Post_grass"))
 physeq_sample <- prune_taxa(taxa_sums(physeq_sample)>0, physeq_sample)
+```
+
+#### Relative abundances of archaea
+```{r spiro_capwild, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+genome_counts_filt %>%
+  mutate_at(vars(-genome),~./sum(.))%>%
+  filter(genome %in% meta_mags$genome) %>% 
+  pivot_longer(!genome, names_to = "sample", values_to = "abundance") %>% 
+  left_join(sample_metadata, by=join_by(sample==sample)) %>% 
+  filter(diet!="Wild") %>%
+  group_by(diet) %>% 
+  summarize(mean_Archaea=mean(abundance), sd_Archaea=sd(abundance), 
+            max_Archaea=max(abundance), min_Archaea=min(abundance),
+            zero_count = sum(abundance == 0, na.rm = TRUE))
+  
+
+meta_mags <- genome_metadata %>% 
+  filter(phylum=="p__Methanobacteriota")
+
+
+genome_counts_filt %>%
+  mutate_at(vars(-genome),~./sum(.))%>%
+  filter(genome %in% meta_mags$genome) %>% 
+  pivot_longer(!genome, names_to = "sample", values_to = "abundance") %>% 
+  left_join(sample_metadata, by=join_by(sample==sample)) %>% 
+  filter(diet!="Wild") %>% 
+  ggplot(aes(y = abundance, x = diet, group=diet, color=diet, fill=diet)) +
+  geom_jitter(width = 0.2, show.legend = FALSE) +
+  geom_boxplot(width = 0.5, alpha=0.5,outlier.shape = NA, show.legend = FALSE) +
+  scale_color_manual(values=diet_colors)+
+  scale_fill_manual(values=diet_colors) +
+  scale_x_discrete(labels=c("Post_grass" = "Grass", "Pre_grass" = "No grass")) +
+  coord_cartesian(xlim = c(1, NA)) +
+  theme_classic() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.text = element_text(size=10),
+    axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)),
+    axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))
+    )+
+  labs(x = "Diet", y = "Methanobacteriota")
 ```
 
 #### MAG level
