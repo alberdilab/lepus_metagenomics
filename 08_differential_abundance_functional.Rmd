@@ -41,6 +41,7 @@ GIFTs_elements_community <- to.community(GIFTs_elements_filtered,genome_counts_r
 GIFTs_functions_community <- to.community(GIFTs_functions,genome_counts_row,GIFT_db)
 GIFTs_domains_community <- to.community(GIFTs_domains,genome_counts_row,GIFT_db)
 ```
+
 ```{r phylum_elem_capacity, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=10, fig.fullwidth=TRUE}
 GIFTs_elements_filtered %>% 
   rownames_to_column("genome") %>%
@@ -495,6 +496,38 @@ physeq_function = phyloseq(count_phy, TAX, sample_info_tab_phy)
   
 ```
 
+```{r structural_functional_capacity, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=10, fig.fullwidth=TRUE}
+
+ancombc_rand_table_mag <- ancombc_rand_table_mag %>% 
+  mutate(group = if_else(lfc_dietPre_grass > 0, "Pre_grass", "Post_grass"))
+GIFTs_elements_filtered %>% 
+  rownames_to_column("genome") %>%
+  filter(genome %in% ancombc_rand_table_mag$taxon)  %>% 
+    pivot_longer(!genome,names_to="trait",values_to="gift") %>% 
+    left_join(ancombc_rand_table_mag, by = join_by(genome == taxon))%>%
+    mutate(functionid = substr(trait, 1, 3)) %>%
+    mutate(trait = case_when(
+      trait %in% GIFT_db$Code_element ~ GIFT_db$Element[match(trait, GIFT_db$Code_element)],
+      TRUE ~ trait
+    )) %>%
+    mutate(functionid = case_when(
+      functionid %in% GIFT_db$Code_function ~ GIFT_db$Function[match(functionid, GIFT_db$Code_function)],
+      TRUE ~ functionid
+    )) %>%
+    mutate(trait=factor(trait,levels=unique(GIFT_db$Element))) %>%
+    mutate(functionid=factor(functionid,levels=unique(GIFT_db$Function))) %>%
+    ggplot(aes(x=genome,y=trait,fill=gift)) +
+        geom_tile(colour="white", linewidth=0.2)+
+        scale_fill_gradientn(colours=rev(c("#d53e4f", "#f46d43", "#fdae61", "#fee08b", "#e6f598", "#abdda4", "#ddf1da")))+
+        facet_grid(functionid ~ group, scales="free",space="free") +
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+              axis.text.y = element_text(size=6),
+              strip.text.y = element_text(angle = 0)
+              ) +
+        labs(y="Traits",x="Samples",fill="GIFT")
+
+```
+
 ```{r ancom_rand_elem_post, comment="", echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
 set.seed(1234) #set seed for reproducibility
 ancom_rand_output_element_pre_post = ancombc2(data = physeq_function, 
@@ -643,3 +676,23 @@ save(ancom_rand_output_element_captive_wild,
      ancom_rand_output_function_pre_post,
      file="data/ancombc_filtered_functional.Rdata")
 ```
+
+
+## CompleteR
+
+```{r}
+library(devtools)
+library(completer)
+library(phyloseq)
+library(tidyverse)
+#setup_completer()
+```
+
+
+```{r}
+lepus_tree <- read_tree("data/DMB0165.tree.gz")
+lepus_annotations <- read_tsv("data/genome_annotations.tsv.xz")
+lepus_traits <- annot_to_traits(annot=genome_annotations,genome_index=2,kegg_index=9)
+lepus_imputed <- completer(traits = lepus_traits, tree = genome_tree)
+```
+
