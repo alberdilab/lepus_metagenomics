@@ -1170,6 +1170,7 @@ ancombc_rand_elem <- ancom_rand_output_element_pre_post$res %>%
   dplyr::arrange(lfc_dietPre_grass)
 
 ```
+
 ```{r ancom_rand_res_elem2, echo=FALSE, comment="", message=FALSE, warning=FALSE}
 ancombc_rand_table <- ancom_rand_output_element_pre_post$res %>%
   dplyr::select(taxon, lfc_dietPre_grass, p_dietPre_grass) %>%
@@ -1177,6 +1178,7 @@ ancombc_rand_table <- ancom_rand_output_element_pre_post$res %>%
   dplyr::arrange(p_dietPre_grass) %>%
   merge(., tax, by="taxon")
 ```
+
 ```{r ancombc_rand_plot_elem2, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
 ancombc_rand_table%>%
 #      mutate(Function=factor(Function,levels=ancombc_rand_table$Function)) %>%
