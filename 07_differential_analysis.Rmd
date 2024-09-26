@@ -270,7 +270,7 @@ tax_color <- merge(tax_table, colors_alphabetic, by="phylum")%>%
 	pull()
 ```
 
-```{r ancombc_rand_genus_plot_capwild, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=10, fig.width=8, fig.fullwidth=TRUE}
+```{r ancombc_rand_genus_plot_capwild, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=8, fig.fullwidth=TRUE}
 ancombc_rand_table_genus%>%
       mutate(taxon=factor(taxon,levels=ancombc_rand_table_genus$taxon)) %>%
 ggplot(., aes(x=lfc_dietWild, y=forcats::fct_rev(taxon), fill=phylum)) + #forcats::fct_rev()
