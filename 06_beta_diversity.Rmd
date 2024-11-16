@@ -77,7 +77,6 @@ beta_q1f <- genome_counts_filt %>%
 
 ```
 
-
 ```{r save_beta, comment="", message=FALSE,echo=FALSE,warning=FALSE, eval=FALSE}
 save(beta_q0n, 
      beta_q1n, 

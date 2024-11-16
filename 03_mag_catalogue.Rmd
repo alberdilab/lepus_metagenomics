@@ -95,6 +95,7 @@ tax_mag %>%
 ```
 
 ## Mag size (MB)
+
 ```{r}
 genome_metadata <-genome_metadata %>% 
   mutate(corrected_size=100*length/completeness)
@@ -287,6 +288,25 @@ grid.arrange(grobs = list(genome_completeness,genome_biplot,genome_contamination
 
 
 ## Functional overview
+
+```{r annotation_stats, message=FALSE, warning=FALSE, fig.height=10, fig.width=10, fig.fullwidth=TRUE}
+genome_annotations <- read_tsv("data/genome_annotations.tsv.xz") %>%
+    rename(gene=1, genome=2, contig=3)
+
+# Predicted genes
+genome_annotations %>%
+  nrow()
+
+# Some annotation
+genome_annotations %>%
+  filter(if_any(c(kegg_id, pfam_hits, cazy_hits), ~ !is.na(.))) %>% 
+  nrow()
+
+# KEGG annotation
+genome_annotations %>%
+  filter(!is.na(kegg_id)) %>% 
+  nrow()
+```
 
 ```{r function_heatmap, message=FALSE, warning=FALSE, fig.height=10, fig.width=10, fig.fullwidth=TRUE}
 
