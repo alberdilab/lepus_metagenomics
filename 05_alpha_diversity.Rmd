@@ -173,11 +173,12 @@ plot2 <- alpha_div %>%
   ggplot(aes(y = value, x = diet, group=diet, color=diet, fill=diet)) +
   geom_jitter(width = 0.2, show.legend = FALSE) +
   geom_boxplot(width = 0.5, alpha=0.5,outlier.shape = NA, show.legend = FALSE) +
-  scale_color_manual(values=diet_colors)+
-  scale_fill_manual(values=diet_colors) +
+  scale_color_manual(values=diet_colors[-2])+
+  scale_fill_manual(values=diet_colors[-2]) +
   scale_x_discrete(labels=c("Wild" = "Wild", "Pre_grass" = "Captive-born")) +
   stat_compare_means(method = "wilcox.test",show.legend = F, size = 3, label.y = c(150), label.x = c(1.5))+
   coord_cartesian(xlim = c(1, NA)) +
+  coord_cartesian(ylim = c(0, 150)) +
   theme_classic() +
   theme(
     strip.background = element_blank(),
@@ -237,6 +238,7 @@ plot4 <- alpha_div %>%
   labs(x = "Origin", y = "Functional")
 
 ```
+
 ```{r div_plot_together, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
 grid.arrange(arrangeGrob(plot1,plot2,plot3, plot4, ncol = 2))
 ```
@@ -302,6 +304,7 @@ plot2 <- alpha_div %>%
   scale_fill_manual(values=diet_colors) +
 #  stat_compare_means(method = "t.test", show.legend = F, size = 3, label.y = c(1.6), label.x = c(1.5))+
   coord_cartesian(xlim = c(1, NA)) +
+  coord_cartesian(ylim = c(0, 150)) +
   theme_classic() +
   theme(
     strip.background = element_blank(),

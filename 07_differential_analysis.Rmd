@@ -271,8 +271,27 @@ tax_color <- merge(tax_table, colors_alphabetic, by="phylum")%>%
 ```
 
 ```{r ancombc_rand_genus_plot_capwild, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=8, fig.fullwidth=TRUE}
-ancombc_rand_table_genus%>%
+genus_matrix <- ancombc_rand_table_genus%>%
       mutate(taxon=factor(taxon,levels=ancombc_rand_table_genus$taxon)) %>%
+      filter(!is.na(phylum))
+
+genus_matrix <- genus_matrix %>% 
+  arrange(desc(-lfc_dietWild)) %>%                
+  slice_head(n = 15) %>%                      
+  bind_rows(                                  
+    genus_matrix %>%
+      arrange(-lfc_dietWild) %>%                      
+      slice_head(n = 15)) 
+
+tax_table <- as.data.frame(unique(genus_matrix$phylum))
+  
+colnames(tax_table)[1] <- "phylum"
+tax_color <- merge(tax_table, colors_alphabetic, by="phylum")%>%
+	dplyr::arrange(phylum) %>%
+	dplyr::select(colors) %>%
+	pull()
+
+genus_matrix %>%      
 ggplot(., aes(x=lfc_dietWild, y=forcats::fct_rev(taxon), fill=phylum)) + #forcats::fct_rev()
   geom_col() + 
   scale_fill_manual(values=tax_color) + 
@@ -517,7 +536,11 @@ physeq_sample <- prune_taxa(taxa_sums(physeq_sample)>0, physeq_sample)
 ```
 
 #### Relative abundances of archaea
-```{r spiro_capwild, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+
+```{r arachea_abundances, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+meta_mags <- genome_metadata %>% 
+  filter(phylum=="p__Methanobacteriota")
+
 genome_counts_filt %>%
   mutate_at(vars(-genome),~./sum(.))%>%
   filter(genome %in% meta_mags$genome) %>% 
@@ -529,10 +552,6 @@ genome_counts_filt %>%
             max_Archaea=max(abundance), min_Archaea=min(abundance),
             zero_count = sum(abundance == 0, na.rm = TRUE))
   
-
-meta_mags <- genome_metadata %>% 
-  filter(phylum=="p__Methanobacteriota")
-
 
 genome_counts_filt %>%
   mutate_at(vars(-genome),~./sum(.))%>%
@@ -689,7 +708,7 @@ ancom_rand_output_mag_pre_post$res %>%
 
 ### Structural zeros
 
-```{r struct_zero, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+```{r grass_struct_zero, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 wild_samples <- sample_metadata %>% 
   filter(diet == "Wild") %>%
   dplyr::select(sample) %>%
@@ -720,7 +739,7 @@ structural_zeros <- genome_counts %>%
 
 ### Enrichment analysis: Ancombc2
 
-```{r zero_phylo2, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+```{r grass_zero_phylo2, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 #phyloseq object considering structual zeros
 phylo_samples <- sample_metadata %>% 
                     column_to_rownames("sample") %>% 
@@ -742,14 +761,14 @@ physeq_genome_filtered <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
 physeq_genome_filtered_clr <- microbiome::transform(physeq_genome_filtered, 'clr')
 ```
 
-```{r filter_pre_post, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+```{r grass_filter_pre_post, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 physeq_sample <- subset_samples(physeq_genome_filtered, diet %in% c("Wild","Post_grass"))
 physeq_sample <- prune_taxa(taxa_sums(physeq_sample)>0, physeq_sample)
 ```
 
 
 #### MAG level
-```{r ancom_rand_pre_post, comment="", echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
+```{r grass_ancom_rand_pre_post, comment="", echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
 set.seed(1234) #set seed for reproducibility
 ancom_rand_output_mag_pre_post = ancombc2(data = physeq_sample, 
                   assay_name = "counts", 
@@ -779,7 +798,7 @@ ancom_rand_output_mag_pre_post = ancombc2(data = physeq_sample,
 
 ```
 
-```{r ancom_rand1_pre_post, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+```{r grass_ancom_rand1_pre_post, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 taxonomy <- data.frame(physeq_sample@tax_table) %>%
   rownames_to_column(., "taxon") %>%
   mutate_at(vars(order, family, genus, species), ~ str_replace(., "[dpcofgs]__", ""))%>%

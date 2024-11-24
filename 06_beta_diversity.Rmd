@@ -188,7 +188,7 @@ beta_q1n$S %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = diet)) +
     geom_point(size = 4) +
-  scale_color_manual(values = diet_colors,labels=c("Pre_grass" = "Captive-bred no grass diet", "Post_grass" = "Captive-borned grass diet", "Wild" = "Wild"))+
+    scale_color_manual(values = diet_colors)+
     #   stat_ellipse(aes(color = beta_q1n_nmds$Groups))+
     geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
     theme_classic() +

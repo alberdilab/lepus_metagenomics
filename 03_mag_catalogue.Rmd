@@ -34,18 +34,45 @@ phylum_heatmap <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EH
     mutate(phylum = factor(phylum, levels = unique(phylum))) %>%
     column_to_rownames(var = "genome")
 
+# Generate new species table
 newspecies_table <- genome_metadata %>% 
   mutate(newspecies=ifelse(species=="s__","Y","N")) %>% 
   select(genome,newspecies) %>% 
   column_to_rownames(var = "genome")
   
+# Generate wild table
+wild_heatmap <- genome_counts_filt  %>%
+  pivot_longer(!genome,names_to="sample",values_to="abundance") %>% 
+  left_join(sample_metadata,by="sample") %>% 
+  filter(diet=="Wild") %>% 
+  group_by(genome) %>% 
+  summarise(presence=ifelse(sum(abundance)>0,"present","absent")) %>% 
+  column_to_rownames(var="genome")
+
+# Generate captive table
+captive_heatmap <- genome_counts_filt  %>%
+  pivot_longer(!genome,names_to="sample",values_to="abundance") %>% 
+  left_join(sample_metadata,by="sample") %>% 
+  filter(diet=="Pre_grass") %>% 
+  group_by(genome) %>% 
+  summarise(presence=ifelse(sum(abundance)>0,"present","absent")) %>% 
+  column_to_rownames(var="genome")
+
+# Generate grass table
+grass_heatmap <- genome_counts_filt  %>%
+  pivot_longer(!genome,names_to="sample",values_to="abundance") %>% 
+  left_join(sample_metadata,by="sample") %>% 
+  filter(diet=="Post_grass") %>% 
+  group_by(genome) %>% 
+  summarise(presence=ifelse(sum(abundance)>0,"present","absent")) %>% 
+  column_to_rownames(var="genome")
 
 # Generate  basal tree
 circular_tree <- force.ultrametric(genome_tree, method="extend") %>% # extend to ultrametric for the sake of visualisation
     ggtree(., layout="fan", open.angle=10, size=0.2)
 
 # Add phylum ring
-circular_tree <- gheatmap(circular_tree, phylum_heatmap, offset=0.1, width=0.1, colnames=FALSE) +
+circular_tree <- gheatmap(circular_tree, phylum_heatmap, offset=0.05, width=0.05, colnames=FALSE) +
         scale_fill_manual(values=phylum_colors) +
         theme(legend.position = "none", plot.margin = margin(0, 0, 0, 0), panel.margin = margin(0, 0, 0, 0))
 
@@ -60,22 +87,39 @@ circular_tree <- circular_tree +
                 data=genome_metadata,
                 geom=geom_bar,
                 mapping = aes(x=completeness, y=genome, fill=contamination),
-                offset = 0.30,
+                offset = 0.3,
+                pwidth = 0.1,
                 orientation="y",
               stat="identity")
 
 # Add genome-size ring
 circular_tree <- circular_tree + new_scale_fill()
 
-circular_tree <- gheatmap(circular_tree, newspecies_table, offset=1.5, width=0.1, colnames=FALSE) +
+circular_tree <- gheatmap(circular_tree, wild_heatmap, offset=0.3, width=0.05, colnames=FALSE) +
+        scale_fill_manual(values=c("#ffffff","#74C8AE")) +
+        theme(legend.position = "none", plot.margin = margin(0, 0, 0, 0), panel.margin = margin(0, 0, 0, 0)) +
+        new_scale_fill()
+
+circular_tree <- gheatmap(circular_tree, captive_heatmap, offset=0.4, width=0.05, colnames=FALSE) +
+        scale_fill_manual(values=c("#ffffff","#F4B02E")) +
+        theme(legend.position = "none", plot.margin = margin(0, 0, 0, 0), panel.margin = margin(0, 0, 0, 0)) +
+        new_scale_fill()
+
+circular_tree <- gheatmap(circular_tree, grass_heatmap, offset=0.5, width=0.05, colnames=FALSE) +
+        scale_fill_manual(values=c("#ffffff","#E6771D")) +
+        theme(legend.position = "none", plot.margin = margin(0, 0, 0, 0), panel.margin = margin(0, 0, 0, 0)) +
+        new_scale_fill()
+
+circular_tree <- gheatmap(circular_tree, newspecies_table, offset=1.2, width=0.05, colnames=FALSE) +
         scale_fill_manual(values=c("#f4f4f4","#666666"))
         theme(legend.position = "none", plot.margin = margin(0, 0, 0, 0), panel.margin = margin(0, 0, 0, 0))
 
 # Add text
 circular_tree <-  circular_tree +
-        annotate('text', x=3.1, y=0, label='            Phylum', family='arial', size=3.5) +
-        annotate('text', x=4, y=0, label='                         Genome quality', family='arial', size=3.5) +
-        annotate('text', x=4.6, y=0, label='                     New species', family='arial', size=3.5)
+        annotate('text', x=2.9, y=0, label='              Phylum', family='arial', size=3.5) +
+        annotate('text', x=3.3, y=0, label='            Group', family='arial', size=3.5) +
+        annotate('text', x=3.8, y=0, label='                         Genome quality', family='arial', size=3.5) +
+        annotate('text', x=4.2, y=0, label='                     New species', family='arial', size=3.5)
 
 #Plot circular tree
 circular_tree %>% open_tree(30) %>% rotate_tree(90)

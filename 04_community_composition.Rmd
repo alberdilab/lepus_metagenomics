@@ -77,12 +77,11 @@ genome_counts_filt %>%
   pivot_longer(-genome, names_to = "sample", values_to = "count") %>% #reduce to minimum number of columns
   left_join(., genome_metadata, by = join_by(genome == genome)) %>% #append genome metadata
   left_join(., sample_metadata, by = join_by(sample == sample)) %>% #append sample metadata
-  filter(diet!="Post_grass") %>% 
   filter(count > 0) %>% #filter 0 counts
   ggplot(., aes(x=sample,y=count, fill=phylum, group=phylum)) + #grouping enables keeping the same sorting of taxonomic units
     geom_bar(stat="identity", colour="white", linewidth=0.1) + #plot stacked bars with white borders
     scale_fill_manual(values=phylum_colors) +
-  facet_grid(~factor(diet, labels=c("Pre_grass" = "Captive-born","Wild" = "Wild-born")), scale="free", space = "free")+
+  facet_grid(~ diet, scale="free", space = "free")+
  #   facet_nested(. ~ region+diet,  scales="free") + #facet per day and treatment
     guides(fill = guide_legend(ncol = 1)) +
     theme(
@@ -287,9 +286,13 @@ genome_metadata %>%
   mutate(percentage=100*count_nospecies/count_total)
 
 ```
+
 **Percentage of MAGs without species-level annotation**
 ```{r sp_percet, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 nmags <- nrow(genome_counts)
+nonspecies <- genome_metadata %>%
+    filter(species == "s__") %>%
+    nrow()
 perct <- nonspecies*100/nmags
 perct
 ```

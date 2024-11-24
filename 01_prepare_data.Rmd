@@ -116,7 +116,7 @@ phylum_colors <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI
 ```
 
 ```{r get_colors, warning=FALSE, comments="", message=FALSE, eval=FALSE}
-diet_colors<- c("#00AEDB","#00AFA1", "#00B159")
+diet_colors<- c("#F4B02E","#E6771D", "#74C8AE")
 ```
 
 ## Prepare a phyloseq object
