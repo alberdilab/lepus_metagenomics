@@ -152,7 +152,6 @@ save(sample_metadata,
      physeq_genome,
      physeq_genome_clr,
      genome_gifts_raw, 
-#     genome_gifts,
      phylum_colors,
      diet_colors,
      file = "data/data.Rdata")

@@ -148,28 +148,31 @@ genome_metadata <-genome_metadata %>%
 Mags average size (MB)
 ```{r mag_size_all_mean, message=FALSE, warning=FALSE}
 genome_metadata %>% 
-  summarise(Average_corrected_size=mean(corrected_size))
+  summarise(Average_corrected_size=mean(corrected_size)) %>% 
+  tt()
 ```
 
 Minimum Mags size (MB)
 
 ```{r mag_size_min,message=FALSE, warning=FALSE}
 genome_metadata %>% 
-  filter(corrected_size==min(corrected_size))
+  filter(corrected_size==min(corrected_size)) %>% 
+  tt()
 ```
 
 Maximum Mags size (MB)
 
 ```{r mag_size_max,message=FALSE, warning=FALSE}
 genome_metadata %>% 
-  filter(corrected_size==max(corrected_size))
+  filter(corrected_size==max(corrected_size)) %>% 
+  tt()
 ```
 
 Mags arrange by size (MB)
 ```{r mag_size_all, message=FALSE, warning=FALSE}
 genome_metadata %>% 
   arrange(corrected_size) %>% 
-  tt()
+  paged_table()
 ```
 
 Mags average size and completeness by phylum
@@ -181,7 +184,8 @@ genome_metadata %>%
   mutate(Size=str_c(round(average_size,2),"±",round(sd_size,2)),
          Completeness=str_c(round(average_comp,2),"±",round(sd_comp,2))) %>% 
   arrange(-average_size) %>% 
-  select(phylum, Size, Completeness)
+  select(phylum, Size, Completeness) %>% 
+  tt()
 ```
 
 Mags average size and completeness by phylum in wild
@@ -207,7 +211,8 @@ wild_genome_metadata %>%
   mutate(Size=str_c(round(average_size,2),"±",round(sd_size,2)),
          Completeness=str_c(round(average_comp,2),"±",round(sd_comp,2))) %>% 
   arrange(-average_size) %>% 
-  select(phylum, Size, Completeness)
+  select(phylum, Size, Completeness) %>% 
+  tt()
 
 ```
 
@@ -217,7 +222,8 @@ wild_genome_metadata %>%
   mutate(Size=str_c(round(average_size,2),"±",round(sd_size,2)),
          Completeness=str_c(round(average_comp,2),"±",round(sd_comp,2))) %>% 
   arrange(-average_size) %>% 
-  select(-Size, -Completeness)
+  select(-Size, -Completeness) %>% 
+  tt()
 ```
 
 Mags average size and completeness by phylum in captivity
@@ -243,7 +249,8 @@ pre_genome_metadata %>%
   mutate(Size=str_c(round(average_size,2),"±",round(sd_size,2)),
          Completeness=str_c(round(average_comp,2),"±",round(sd_comp,2))) %>% 
   arrange(-average_size) %>% 
-  select(phylum, Size, Completeness)
+  select(phylum, Size, Completeness) %>% 
+  tt()
 
 ```
 

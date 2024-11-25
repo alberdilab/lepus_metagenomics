@@ -1,9 +1,8 @@
 ---
 title: "AlberdiLab | Manuscript in prep"
-subtitle: "Lepus europaeus metagenomics"
+subtitle: "Dietary intervention in captive-bred hares fails to enrich gut microbiomes with wild-like functions"
 author:
-  - Ostaizka Aizpurua^[University of Copenhagen, ostaizka.aizpurua@sund.ku.dk]
-  - Antton Alberdi^[University of Copenhagen, antton.alberdi@sund.ku.dk]
+  - Ostaizka Aizpurua, Garazi Martin-Bideguren, Nanna Gaun, M Thomas P Gilbert, Antton Alberdi^[University of Copenhagen, antton.alberdi@sund.ku.dk]
 date: "`r Sys.Date()`"
 site: bookdown::bookdown_site
 documentclass: book
@@ -36,7 +35,7 @@ RStudio > New Project > Version Control > Git
 
 And indicating the following git repository:
 
-> https://github.com/alberdilab/mediterranean_podarcis.git
+> https://github.com/alberdilab/lepus_metagenomics.git
 
 Once the R project has been created, follow the instructions and code chunks shown in this webbook.
 
@@ -53,6 +52,8 @@ library(devtools)
 library(tinytable)
 library(rairtable)
 library(janitor)
+library(rmarkdown)
+
 
 # For tree handling
 library(ape)

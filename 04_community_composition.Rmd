@@ -271,7 +271,9 @@ genome_metadata %>%
 ```{r nonspe, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 genome_metadata %>%
   filter(species == "s__") %>%
-  summarize(Mag_nospecies = n())
+  summarize(Mag_nospecies = n())%>%
+  select(Mag_nospecies) %>% 
+  pull()
 
 ```
 ```{r nonspe_phylum, comment="", echo=FALSE, message=FALSE, warning=FALSE}
@@ -283,7 +285,8 @@ genome_metadata %>%
   group_by(phylum) %>%
   summarize(count_nospecies = n()) %>% 
   left_join(total_mag_phylum, by = join_by(phylum == phylum)) %>% 
-  mutate(percentage=100*count_nospecies/count_total)
+  mutate(percentage=100*count_nospecies/count_total) %>% 
+  tt()
 
 ```
 
@@ -428,7 +431,7 @@ family_summary %>%
            Captive=str_c(round(Cap_mean,2),"±",round(Cap_sd,2))) %>% 
     arrange(-total_mean) %>% 
     dplyr::select(family,Total,Wild,Captive) %>% 
-    tt()
+    paged_table()
 ```
 
 #### Origin and Diet
@@ -449,7 +452,7 @@ family_summary %>%
            Post_grass=str_c(round(Post_grass_mean,2),"±",round(Post_grass_sd,2))) %>% 
     arrange(-total_mean) %>% 
     dplyr::select(family,Total,Wild,Pre_grass,Post_grass) %>% 
-    tt()
+    paged_table()
 ```
 
 ```{r taxonomy_jitterplot_family, warning=FALSE, comments="", message=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
@@ -506,8 +509,9 @@ genus_summary %>%
            Post_grass=str_c(round(Post_grass_mean,2),"±",round(Post_grass_sd,2))) %>% 
     arrange(-total_mean) %>% 
     dplyr::select(genus,Total,Wild,Pre_grass,Post_grass) %>% 
-    tt()
+    paged_table()
 ```
+
 ```{r taxonomy_jitterplot_genus, fig.height=14, fig.width=10, fig.fullwidth=TRUE}
 genus_arrange <- genus_summary %>%
     group_by(genus) %>%
