@@ -18,9 +18,7 @@ genome_metadata <- genome_metadata %>%
   semi_join(., genome_counts_filt, by = "genome") %>% 
   arrange(match(genome,genome_counts_filt$genome))
 
-genome_tree <- keep.tip(genome_tree, tip=genome_metadata$genome) # keep only MAG tips
-
-#load("data/genome_gifts.Rdata")
+genome_tree <- keep.tip(genome_tree, tip=genome_metadata$genome)
 ```
 
 ## Genome phylogeny

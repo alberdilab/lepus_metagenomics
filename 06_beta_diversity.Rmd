@@ -1,15 +1,11 @@
 # Beta diversity
 
-```{r load_data_beta, comment="", message=FALSE, warning=FALSE, eval=FALSE}
-load("data/data.Rdata")
-load("data/beta.Rdata")
-```
-
 ## Captive-bred vs wild
 
 ```{r load_data_mag_filtdamr_capwild, comment="", message=FALSE, warning=FALSE}
 load("data/beta_filtered_capwild.Rdata")
 load("data/data_host_filtered.Rdata")
+diet_colors<- c("#F4B02E","#E6771D", "#74C8AE")
 ```
 
 ```{r filter_capwil, comment="", message=FALSE, warning=FALSE}
@@ -145,7 +141,7 @@ adonis2(beta_q1f$S ~ diet,
 
 #### Richness
 
-```{r beta_div_nmds_neutral_plot_median, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE, eval=FALSE}
+```{r beta_div_nmds_neutral_plot_median, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE}
 beta_q0n$S %>%
   vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
   vegan::scores() %>%
@@ -156,12 +152,12 @@ beta_q0n$S %>%
   mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = diet)) +
-    geom_point(size = 4) +
-  scale_color_manual(values = diet_colors,labels=c("Pre_grass" = "Captive-bred no grass diet", "Post_grass" = "Captive-bred grass diet", "Wild" = "Wild"))+
-    #   stat_ellipse(aes(color = beta_q1n_nmds$Groups))+
-    geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
-    theme_classic() +
-    theme(
+  geom_point(size = 4) +
+  scale_color_manual(labels=c("Pre_grass" = "Captive pre-grass", "Wild" = "Wild"),
+          values=c("#F4B02E", "#74C8AE"))+
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme_classic() +
+  theme(
       axis.text.x = element_text(size = 12),
       axis.text.y = element_text(size = 12),
       axis.title = element_text(size = 12, face = "bold"),
@@ -169,14 +165,14 @@ beta_q0n$S %>%
       panel.background = element_blank(),
       axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
       legend.text = element_text(size = 12),
-      legend.title = element_text(size = 14),
-      legend.position = "right", legend.box = "vertical"
-    ) +labs(color='Origin')
+      legend.title = element_blank(),
+      legend.position = "right"
+    ) 
 ```
 
 #### Neutral
 
-```{r beta_div_neutral, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+```{r beta_div_neutral, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE}
 beta_q1n$S %>%
   vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
   vegan::scores() %>%
@@ -187,12 +183,12 @@ beta_q1n$S %>%
   mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = diet)) +
-    geom_point(size = 4) +
-    scale_color_manual(values = diet_colors)+
-    #   stat_ellipse(aes(color = beta_q1n_nmds$Groups))+
-    geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
-    theme_classic() +
-    theme(
+  geom_point(size = 4) +
+  scale_color_manual(labels=c("Pre_grass" = "Captive pre-grass", "Wild" = "Wild"),
+          values=c("#F4B02E", "#74C8AE"))+    
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme_classic() +
+  theme(
       axis.text.x = element_text(size = 12),
       axis.text.y = element_text(size = 12),
       axis.title = element_text(size = 12, face = "bold"),
@@ -200,16 +196,15 @@ beta_q1n$S %>%
       panel.background = element_blank(),
       axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
       legend.text = element_text(size = 12),
-      legend.title = element_text(size = 14),
-      legend.position = "right", legend.box = "vertical"
-    ) +labs(color='Origin')
-# +geom_text_repel(aes(label = individual), size=3)
+      legend.title = element_blank(),
+      legend.position = "right"
+    )
 ```
 
 
 #### Phylogenetic
 
-```{r beta_div_nmds_phylo1_plot, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE, eval=FALSE}
+```{r beta_div_nmds_phylo1_plot, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE}
 beta_q1p$S %>%
   vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
   vegan::scores() %>%
@@ -220,22 +215,22 @@ beta_q1p$S %>%
   mutate(y_cen = median(NMDS2, na.rm = TRUE)) %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = diet)) +
-    geom_point(size = 4) +
-    scale_color_manual(values = diet_colors,labels=c("Pre_grass" = "Captive-bred no grass diet", "Wild" = "Wild"))+
-    geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
-    theme_classic() +
-    theme(
+  geom_point(size = 4) +
+  scale_color_manual(labels=c("Pre_grass" = "Captive pre-grass", "Wild" = "Wild"),
+          values=c("#F4B02E", "#74C8AE"))+    
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme_classic() +
+  theme(
       axis.text.x = element_text(size = 12),
       axis.text.y = element_text(size = 12),
-      axis.title = element_text(size = 20, face = "bold"),
-      axis.text = element_text(face = "bold", size = 18),
+      axis.title = element_text(size = 12, face = "bold"),
+      axis.text = element_text(face = "bold", size = 12),
       panel.background = element_blank(),
       axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
-      legend.text = element_text(size = 16),
-      legend.title = element_text(size = 18),
-      legend.position = "right", legend.box = "vertical"
-    ) +
-    labs(color='Origin')
+      legend.text = element_text(size = 12),
+      legend.title = element_blank(),
+      legend.position = "right"
+    )
 ```
 
 
@@ -252,21 +247,21 @@ beta_q1f$S %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = diet)) +
   geom_point(size = 4) +
-  scale_color_manual(values = diet_colors,labels=c("Pre_grass" = "Captive-bred no grass diet", "Wild" = "Wild"))+
+  scale_color_manual(labels=c("Pre_grass" = "Captive pre-grass", "Wild" = "Wild"),
+          values=c("#F4B02E", "#74C8AE"))+    
   geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
   theme_classic() +
   theme(
       axis.text.x = element_text(size = 12),
       axis.text.y = element_text(size = 12),
-      axis.title = element_text(size = 20, face = "bold"),
-      axis.text = element_text(face = "bold", size = 18),
+      axis.title = element_text(size = 12, face = "bold"),
+      axis.text = element_text(face = "bold", size = 12),
       panel.background = element_blank(),
       axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
-      legend.text = element_text(size = 16),
-      legend.title = element_text(size = 18),
-      legend.position = "right", legend.box = "vertical"
-    ) +
-    labs(color='Origin')
+      legend.text = element_text(size = 12),
+      legend.title = element_blank(),
+      legend.position = "right"
+    )
 ```
 
 
@@ -274,9 +269,6 @@ beta_q1f$S %>%
 
 ```{r load_data_prepost, comment="", message=FALSE, warning=FALSE}
 load("data/beta_filtered_pre_post.Rdata")
-```
-
-```{r load_data_mag_prepost, comment="", message=FALSE, warning=FALSE}
 genome_counts <- genome_counts_filt
 post_pre_samples <- sample_metadata %>% 
   filter(diet!="Wild") %>%
@@ -288,6 +280,7 @@ genome_counts<- genome_counts %>%
 sample_metadata <- sample_metadata %>% 
   filter(diet!="Wild")
 ```
+
 ```{r beta_div_prepost, comment="", message=FALSE, warning=FALSE, eval=FALSE}
 beta_q0n <- genome_counts %>%
   column_to_rownames(., "genome") %>%
@@ -336,10 +329,6 @@ beta_q1f <- genome_counts_filt %>%
   select_if(~!all(. == 0)) %>%
   hillpair(., q = 1, dist = dist)
 
-```
-
-
-```{r save_beta_prepost, comment="", message=FALSE,echo=FALSE,warning=FALSE, eval=FALSE}
 save(beta_q0n, 
      beta_q1n, 
      beta_q1p, 
@@ -423,27 +412,27 @@ beta_q0n$S %>%
   mutate(y_cen = median(NMDS2, na.rm = TRUE)) %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = diet)) +
-    geom_point(size = 4) +
-    scale_color_manual(values = diet_colors,labels=c("Pre_grass" = "Captive-bred no grass diet", "Post_grass" = "Captive-bred grass diet"))+
-    geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
-    theme_classic() +
-    theme(
+  geom_point(size = 4) +
+  scale_color_manual(labels=c("Pre_grass" = "Captive pre-grass","Post_grass" = "Captive post-grass"),
+          values=c("#F4B02E", "#E6771D"))+    
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme_classic() +
+  theme(
       axis.text.x = element_text(size = 12),
       axis.text.y = element_text(size = 12),
-      axis.title = element_text(size = 20, face = "bold"),
-      axis.text = element_text(face = "bold", size = 18),
+      axis.title = element_text(size = 12, face = "bold"),
+      axis.text = element_text(face = "bold", size = 12),
       panel.background = element_blank(),
       axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
-      legend.text = element_text(size = 16),
-      legend.title = element_text(size = 18),
-      legend.position = "right", legend.box = "vertical"
-    ) +
-    labs(color='Origin')
+      legend.text = element_text(size = 12),
+      legend.title = element_blank(),
+      legend.position = "right"
+    )
 ```
 
 #### Neutral
 
-```{r beta_div_neutral_pre_post, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+```{r beta_div_neutral_pre_post, comment="", message=FALSE, warning=FALSE}
 beta_q1n$S %>%
   vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
   vegan::scores() %>%
@@ -454,22 +443,22 @@ beta_q1n$S %>%
   mutate(y_cen = median(NMDS2, na.rm = TRUE)) %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = diet)) +
-    geom_point(size = 4) +
-    scale_color_manual(values = diet_colors,labels=c("Pre_grass" = "Captive-bred no grass diet", "Post_grass" = "Captive-bred grass diet"))+
-    geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
-    theme_classic() +
-    theme(
+  geom_point(size = 4) +
+  scale_color_manual(labels=c("Pre_grass" = "Captive pre-grass","Post_grass" = "Captive post-grass"),
+          values=c("#F4B02E", "#E6771D"))+    
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme_classic() +
+  theme(
       axis.text.x = element_text(size = 12),
       axis.text.y = element_text(size = 12),
-      axis.title = element_text(size = 20, face = "bold"),
-      axis.text = element_text(face = "bold", size = 18),
+      axis.title = element_text(size = 12, face = "bold"),
+      axis.text = element_text(face = "bold", size = 12),
       panel.background = element_blank(),
       axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
-      legend.text = element_text(size = 16),
-      legend.title = element_text(size = 18),
-      legend.position = "right", legend.box = "vertical"
-    ) +
-    labs(color='Origin')
+      legend.text = element_text(size = 12),
+      legend.title = element_blank(),
+      legend.position = "right"
+    )
 ```
 
 
@@ -486,22 +475,22 @@ beta_q1p$S %>%
   mutate(y_cen = median(NMDS2, na.rm = TRUE)) %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = diet)) +
-    geom_point(size = 4) +
-    scale_color_manual(values = diet_colors,labels=c("Pre_grass" = "Captive-bred no grass diet", "Post_grass" = "Captive-bred grass diet"))+
-    geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
-    theme_classic() +
-    theme(
+  geom_point(size = 4) +
+  scale_color_manual(labels=c("Pre_grass" = "Captive pre-grass","Post_grass" = "Captive post-grass"),
+          values=c("#F4B02E", "#E6771D"))+    
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme_classic() +
+  theme(
       axis.text.x = element_text(size = 12),
       axis.text.y = element_text(size = 12),
-      axis.title = element_text(size = 20, face = "bold"),
-      axis.text = element_text(face = "bold", size = 18),
+      axis.title = element_text(size = 12, face = "bold"),
+      axis.text = element_text(face = "bold", size = 12),
       panel.background = element_blank(),
       axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
-      legend.text = element_text(size = 16),
-      legend.title = element_text(size = 18),
-      legend.position = "right", legend.box = "vertical"
-    ) +
-    labs(color='Origin')
+      legend.text = element_text(size = 12),
+      legend.title = element_blank(),
+      legend.position = "right"
+    )
 ```
 
 
@@ -517,20 +506,20 @@ beta_q1f$S %>%
   mutate(y_cen = median(NMDS2, na.rm = TRUE)) %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = diet)) +
-    geom_point(size = 4) +
-    scale_color_manual(values = diet_colors,labels=c("Pre_grass" = "Captive-bred no grass diet", "Post_grass" = "Captive-bred grass diet"))+
-    geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
-    theme_classic() +
-    theme(
+  geom_point(size = 4) +
+  scale_color_manual(labels=c("Pre_grass" = "Captive pre-grass","Post_grass" = "Captive post-grass"),
+          values=c("#F4B02E", "#E6771D"))+    
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme_classic() +
+  theme(
       axis.text.x = element_text(size = 12),
       axis.text.y = element_text(size = 12),
-      axis.title = element_text(size = 20, face = "bold"),
-      axis.text = element_text(face = "bold", size = 18),
+      axis.title = element_text(size = 12, face = "bold"),
+      axis.text = element_text(face = "bold", size = 12),
       panel.background = element_blank(),
       axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
-      legend.text = element_text(size = 16),
-      legend.title = element_text(size = 18),
-      legend.position = "right", legend.box = "vertical"
-    ) +
-    labs(color='Origin')
+      legend.text = element_text(size = 12),
+      legend.title = element_blank(),
+      legend.position = "right"
+    )
 ```
